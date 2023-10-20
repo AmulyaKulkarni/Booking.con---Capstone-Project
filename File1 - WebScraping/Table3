@@ -1,0 +1,91 @@
+import csv
+from selenium import webdriver
+from bs4 import BeautifulSoup
+
+def scrape_hotel_data(city, base_url, num_pages):
+    options = webdriver.ChromeOptions()
+    options.add_argument("executable_path=C:\\Desktop\\chromedriver.exe")
+    driver = webdriver.Chrome(options=options)
+
+    all_hotel_data = []
+
+    for page in range(1, num_pages + 1):
+        url = f'{base_url}&offset={25 * (page - 1)}'
+        driver.get(url)
+        driver.implicitly_wait(10)
+        page_source = driver.page_source
+
+        soup = BeautifulSoup(page_source, 'html.parser')
+
+        hotel_elements = soup.find_all('div', class_='f6431b446c a15b38c233')
+        price = soup.find_all('span', class_='f6431b446c fbfd7c1165 e84eb96b1f')
+        room_type = soup.find_all('span', class_='e8f7c070a7')
+        bed_type = soup.find_all('div', class_='abf093bdfe')
+
+        for hotel, priceloop, room, bed in zip(hotel_elements, price, room_type, bed_type):
+            hotel_name = hotel.text.strip()
+            priceloop = priceloop.text if priceloop else 'N/A'
+            room = room.text if room else 'N/A'
+            bed = bed.text if bed else 'N/A'
+            all_hotel_data.append([hotel_name, priceloop, room, bed])
+
+    driver.quit()
+
+    csv_file = f'hotel_data_price_{city}.csv'
+    with open(csv_file, 'w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(['Hotel Name', 'Price', 'Room', 'Bed'])
+        for hotel_data in all_hotel_data:
+            writer.writerow(hotel_data)
+
+    print(f'Data saved to {csv_file}')
+
+cities = {
+    "Berlin": {
+        "url": 'https://www.booking.com/searchresults.en-gb.html?label=yho748jc-1FCAEoggI46AdIM1gDaGyIAQGYAQm4ARfIAQzYAQHoAQH4AQyIAgGoAgO4AurS96YGwAIB0gIkMTJhN2VkNjAtYzc1MS00MjVhLTg3ZjYtMzI9ZWMzN7jkNzhm2AIG4AIB&aid=397646&ss=Berlin%2C+Berlin+Federal+State%2C+Germany&ssne=Birmingham&ssne_untouched=Birmingham&lang=en-gb&src=searchresults&dest_id=-1746443&dest_type=city&ac_position=0&ac_click_type=b&ac_langcode=en&ac_suggestion_list_length=5&search_selected=true&search_pageview_id=32d093a636810136&ac_meta=GhAzMmQwOTNhNjM2ODEwMTM2IAAoATICZW46A2JlckAASgBQAA%3D%3D&checkin=2023-10-25&checkout=2023-10-26&group_adults=2&no_rooms=1&group_children=0&nflt=ht_id%3D204',
+        "num_pages": 24
+    },
+    "London, United Kingdom": {
+        "url": 'https://www.booking.com/searchresults.en-gb.html?ss=London',
+        "num_pages": 10 
+    },
+    "Kuala Lumpur, Malaysia": {
+        "url": 'https://www.booking.com/searchresults.en-gb.html?ss=Kuala+Lumpur',
+        "num_pages": 8
+    },
+    "Manchester": {
+        "url": 'https://www.booking.com/searchresults.en-gb.html?ss=Manchester',
+        "num_pages": 6 
+    },
+    "New Delhi": {
+        "url": 'https://www.booking.com/searchresults.en-gb.html?ss=New+Delhi',
+        "num_pages": 8  
+    },
+    "Birmingham": {
+        "url": 'https://www.booking.com/searchresults.en-gb.html?ss=Birmingham',
+        "num_pages": 6  
+    },
+    "Sydney": {
+        "url": 'https://www.booking.com/searchresults.en-gb.html?ss=Sydney',
+        "num_pages": 8 
+    },
+    "Melbourne": {
+        "url": 'https://www.booking.com/searchresults.en-gb.html?ss=Melbourne',
+        "num_pages": 8  
+    },
+    "Paris": {
+        "url": 'https://www.booking.com/searchresults.en-gb.html?ss=Paris',
+        "num_pages": 10 
+    },
+    "Tokyo": {
+        "url": 'https://www.booking.com/searchresults.en-gb.html?ss=Tokyo',
+        "num_pages": 10 
+    },
+    "Toronto": {
+        "url": 'https://www.booking.com/searchresults.en-gb.html?ss=Toronto',
+        "num_pages": 8  
+    }
+}
+
+for city, city_data in cities.items():
+    scrape_hotel_data(city, city_data["url"], city_data["num_pages"])

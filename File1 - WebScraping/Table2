@@ -1,0 +1,103 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+import csv
+
+cities = [
+    "Dubai, United Arab Emirates",
+    "London, United Kingdom",
+    "Kuala Lumpur, Malaysia",
+    "Manchester",
+    "New Delhi",
+    "Birmingham",
+    "Berlin",
+    "Sydney",
+    "Melbourne",
+    "Paris",
+    "Tokyo",
+    "Toronto"
+]
+
+driver = webdriver.Chrome(executable_path='C:\Desktop\chromedriver.exe')
+
+with open('final2.csv', mode='w', newline='', encoding='utf-8') as csv_file:
+    fieldnames = ['Hotel Name', 'freewifi', 'familyrooms', 'nonsmokingrooms', 'restaurant', 'bar', 'heating', 'lift','Cuisine1', 'Cuisine2', 'Cuisine3']
+    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+    writer.writeheader()
+
+    for city in cities:
+        print(f"Scraping data for {city}")
+
+        url = f"https://www.booking.com/searchresults.en-gb.html?ss={city.replace(' ', '+')}"
+        driver.get(url)
+        driver.implicitly_wait(5)
+
+      
+        hotel_links = driver.find_elements(By.CLASS_NAME, "a78ca197d0")
+
+        for hotel_link in hotel_links:
+       
+            hotel_link.click()
+
+          
+            driver.implicitly_wait(5)
+
+           
+            amenity_presence = {
+                'Free Wifi': 'No',
+                'Family Rooms': 'No',
+                'Non Smoking Rooms': 'No',
+                'Restaurant': 'No',
+                'Bar': 'No',
+                'Heating': 'No',
+                'Lift': 'No',
+            }
+
+          
+            hotel_details = driver.find_elements(By.CLASS_NAME, "property-section--content")
+
+            for detail in hotel_details:
+                detail_name = detail.find_element(By.CLASS_NAME, "e50d7535fa").text.strip()
+                if detail_name in amenity_presence:
+                    amenity_presence[detail_name] = 'Yes'
+
+      
+            hotel_name = driver.find_element(By.CLASS_NAME, "d2fee87262 pp-header__title").text.strip()
+
+      
+            cuisine_elements = driver.find_elements(By.CLASS_NAME, "ph-item-copy-breakfast-option")
+
+  
+            cuisine1 = ''
+            cuisine2 = ''
+            cuisine3 = ''
+
+            for i, cuisine_element in enumerate(cuisine_elements):
+                if i == 0:
+                    cuisine1 = cuisine_element.text.strip()
+                elif i == 1:
+                    cuisine2 = cuisine_element.text.strip()
+                elif i == 2:
+                    cuisine3 = cuisine_element.text.strip()
+
+    
+            writer.writerow({
+                'Hotel Name': hotel_name,
+                'freeifi': amenity_presence['Free Wifi'],
+                'familyrooms': amenity_presence['Family Rooms'],
+                'nonsmokingrooms': amenity_presence['Non Smoking Rooms'],
+                'restaurant': amenity_presence['Restaurant'],
+                'bar': amenity_presence['Bar'],
+                'heating': amenity_presence['Heating'],
+                'lift': amenity_presence['Lift'],
+                'Cuisine1': cuisine1,
+                'Cuisine2': cuisine2,
+                'Cuisine3': cuisine3,
+            })
+
+        
+            driver.back()
+
+          
+            driver.implicitly_wait(5)
+
+driver.quit()
